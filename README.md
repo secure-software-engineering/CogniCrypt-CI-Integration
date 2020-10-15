@@ -16,3 +16,8 @@ Please see the individual folders for detailed information about building and in
 
 ## Contributing
 TODO
+
+## Limitations
+
+##### Version 1.5-SNAPSHOT
+- Maven Plugin only works for JCA CrySL ruleset.
