@@ -1,0 +1,192 @@
+{
+	"version": "2.0.0",
+	"runs": [{
+		"files": {
+			"example\/PredicateMissingExample.java": {
+				"mimeType": "text\/java"
+			},
+			"example\/TypestateErrorExample.java": {
+				"mimeType": "text\/java"
+			},
+			"example\/IncompleOperationErrorExample.java": {
+				"mimeType": "text\/java"
+			},
+			"example\/ConstraintErrorExample.java": {
+				"mimeType": "text\/java"
+			}
+		},
+		"resources": {
+			"rules": {
+				"RequiredPredicateError": {
+					"id": "RequiredPredicateError",
+					"fullDescription": {
+						"text": "An object A expects an object B to have been used correctly (CrySL blocks REQUIRES and ENSURES). For example a Cipher object requires a SecretKey object to be correctly and securely generated."
+					}
+				},
+				"TypestateError": {
+					"id": "TypestateError",
+					"fullDescription": {
+						"text": "The ORDER block of CrySL is violated, i.e., the expected method sequence call to be made is incorrect. For example, a Signature object expects a call to initSign(key) prior to update(data)."
+					}
+				},
+				"ConstraintError": {
+					"id": "ConstraintError",
+					"fullDescription": {
+						"text": "A constraint of a CrySL rule is violated, e.g., a key is generated with the wrong key size."
+					}
+				},
+				"IncompleteOperationError": {
+					"id": "IncompleteOperationError",
+					"fullDescription": {
+						"text": "The usage of an object may be incomplete: For example a Cipherobject may be initialized but never used for en- or decryption, this may render the code dead. This error heavily depends on the computed call graph (CHA by default)"
+					}
+				},
+				"IncompleteOperationError-1": {
+					"id": "IncompleteOperationError",
+					"fullDescription": {
+						"text": "The usage of an object may be incomplete: For example a Cipherobject may be initialized but never used for en- or decryption, this may render the code dead. This error heavily depends on the computed call graph (CHA by default)"
+					}
+				},
+				"ConstraintError-1": {
+					"id": "ConstraintError",
+					"fullDescription": {
+						"text": "A constraint of a CrySL rule is violated, e.g., a key is generated with the wrong key size."
+					}
+				},
+				"ImpreciseValueExtractionError-1": {
+					"id": "ImpreciseValueExtractionError",
+					"fullDescription": {
+						"text": "A constraint of a CrySL rule is violated, e.g., a key is generated with the wrong key size."
+					}
+				}
+			}
+		},
+		"results": [{
+			"locations": [{
+				"physicalLocation": {
+					"fileLocation": {
+						"uri": "example\/ConstraintErrorExample.java"
+					},
+					"region": {
+						"startLine": 15
+					}
+				},
+				"fullyQualifiedLogicalName": "example::ImpreciseValueExtractionError::main"
+			}],
+			"ruleId": "ImpreciseValueExtractionError",
+			"message": {
+				"text": "First parameter (with value \"AES\/ECB\/PKCS5Padding\") should be any of AES\/{CBC, GCM, PCBC, CTR, CTS, CFB, OFB}.",
+				"richText": "ImpreciseValueExtractionError violating CrySL rule for javax.crypto.Cipher."
+			}
+		}, {
+			"locations": [{
+				"physicalLocation": {
+					"fileLocation": {
+						"uri": "example\/ConstraintErrorExample.java"
+					},
+					"region": {
+						"startLine": 15
+					}
+				},
+				"fullyQualifiedLogicalName": "example::ConstraintErrorExample::main"
+			}],
+			"ruleId": "ConstraintError",
+			"message": {
+				"text": "First parameter (with value \"AES\/ECB\/PKCS5Padding\") should be any of AES\/{CBC, GCM, PCBC, CTR, CTS, CFB, OFB}.",
+				"richText": "ConstraintError violating CrySL rule for javax.crypto.Cipher."
+			}
+		}, {
+			"locations": [{
+				"physicalLocation": {
+					"fileLocation": {
+						"uri": "example\/IncompleOperationErrorExample.java"
+					},
+					"region": {
+						"startLine": 22
+					}
+				},
+				"fullyQualifiedLogicalName": "example::IncompleOperationErrorExample::main"
+			}],
+			"ruleId": "IncompleteOperationError",
+			"message": {
+				"text": "Operation on object of type java.security.Signature object not completed. Expected call to <java.security.Signature: void update(byte[],int,int)>, <java.security.Signature: void update(byte)>, sign, <java.security.Signature: void update(java.nio.ByteBuffer)>, <java.security.Signature: void update(byte[])>.",
+				"richText": "IncompleteOperationError violating CrySL rule for java.security.Signature."
+			}
+		}, {
+			"locations": [{
+				"physicalLocation": {
+					"fileLocation": {
+						"uri": "example\/IncompleOperationErrorExample.java"
+					},
+					"region": {
+						"startLine": 31
+					}
+				},
+				"fullyQualifiedLogicalName": "example::IncompleOperationErrorExample::main"
+			}],
+			"ruleId": "IncompleteOperationError-1",
+			"message": {
+				"text": "Operation on object of type java.security.Signature object not completed. Expected call to sign, update.",
+				"richText": "IncompleteOperationError violating CrySL rule for java.security.Signature."
+			}
+		}, {
+			"locations": [{
+				"physicalLocation": {
+					"fileLocation": {
+						"uri": "example\/PredicateMissingExample.java"
+					},
+					"region": {
+						"startLine": 26
+					}
+				},
+				"fullyQualifiedLogicalName": "example::PredicateMissingExample::main"
+			}],
+			"ruleId": "RequiredPredicateError",
+			"message": {
+				"text": "Second parameter was not properly generated as generated Key.",
+				"richText": "RequiredPredicateError violating CrySL rule for javax.crypto.Cipher."
+			}
+		}, {
+			"locations": [{
+				"physicalLocation": {
+					"fileLocation": {
+						"uri": "example\/PredicateMissingExample.java"
+					},
+					"region": {
+						"startLine": 21
+					}
+				},
+				"fullyQualifiedLogicalName": "example::PredicateMissingExample::main"
+			}],
+			"ruleId": "ConstraintError-1",
+			"message": {
+				"text": "First parameter (with value 46) should be any of {128, 192, 256}.",
+				"richText": "ConstraintError violating CrySL rule for javax.crypto.KeyGenerator."
+			}
+		}, {
+			"locations": [{
+				"physicalLocation": {
+					"fileLocation": {
+						"uri": "example\/TypestateErrorExample.java"
+					},
+					"region": {
+						"startLine": 24
+					}
+				},
+				"fullyQualifiedLogicalName": "example::TypestateErrorExample::main"
+			}],
+			"ruleId": "TypestateError",
+			"message": {
+				"text": "Unexpected call to method sign on object of type java.security.Signature. Expect a call to one of the following methods initSign,update.",
+				"richText": "TypestateError violating CrySL rule for java.security.Signature."
+			}
+		}],
+		"tool": {
+			"name": "CogniCrypt",
+			"semanticVersion": "1.0.0",
+			"fullName": "CogniCrypt (en-US)",
+			"language": "en-US",
+			"version": "1.0.0"
+		}
+	}]
+}

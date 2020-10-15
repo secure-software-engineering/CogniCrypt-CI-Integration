@@ -1,0 +1,108 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>de.fraunhofer.iem.cognicrypt</groupId>
+	<artifactId>test-app</artifactId>
+	<version>1.0</version>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.66</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.crypto.tink</groupId>
+			<artifactId>tink</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+
+			<!-- First we download the ruleset and put it somewhere -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.1.2</version>
+				<executions>
+					<execution>
+						<id>unpack</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>de.darmstadt.tu.crossing</groupId>
+									<artifactId>JavaCryptographicArchitecture</artifactId>
+									<version>1.5.2</version>
+									<classifier>ruleset</classifier>
+									<type>zip</type>
+									<overWrite>true</overWrite>
+									<outputDirectory>${basedir}</outputDirectory>
+									<includes>**</includes>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Then we run CogniCrypt with the rules we just downloaded-->
+			<plugin>
+				<groupId>de.fraunhofer.iem</groupId>
+				<artifactId>cognicrypt-maven</artifactId>
+				<version>1.5-SNAPSHOT</version>
+				<executions>
+					<execution>
+						<id>run-cognicrypt</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>cognicrypt</goal>
+						</goals>
+						<configuration>
+							<outputFormat>standard</outputFormat> <!-- or use 'sarif' -->
+							<rulesDirectory>${basedir}/JavaCryptographicArchitecture</rulesDirectory>
+							<includeDependencies>true</includeDependencies>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>${basedir}/JavaCryptographicArchitecture</directory>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>soot-release</id>
+			<name>soot release</name>
+			<url>https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-release/</url>
+		</repository>
+	</repositories>
+
+</project>
