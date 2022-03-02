@@ -12,16 +12,25 @@
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.66</version>
+			<version>1.68</version>
 		</dependency>
 		<dependency>
-			<groupId>com.google.crypto.tink</groupId>
-			<artifactId>tink</artifactId>
-			<version>1.2.0</version>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bctls-jdk15on</artifactId>
+			<version>1.68</version>
 		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
 
 			<!-- First we download the ruleset and put it somewhere -->
 			<plugin>
@@ -37,6 +46,16 @@
 						</goals>
 						<configuration>
 							<artifactItems>
+								<artifactItem>
+									<groupId>de.fraunhofer.iem</groupId>
+									<artifactId>BouncyCastle</artifactId>
+									<version>0.7.1</version>
+									<classifier>ruleset</classifier>
+									<type>zip</type>
+									<overWrite>true</overWrite>
+									<outputDirectory>${basedir}</outputDirectory>
+									<includes>**</includes>
+								</artifactItem>
 								<artifactItem>
 									<groupId>de.darmstadt.tu.crossing</groupId>
 									<artifactId>JavaCryptographicArchitecture</artifactId>
@@ -67,7 +86,7 @@
 						</goals>
 						<configuration>
 							<outputFormat>standard</outputFormat> <!-- or use 'sarif' -->
-							<rulesDirectory>${basedir}/JavaCryptographicArchitecture</rulesDirectory>
+							<rulesDirectory>${basedir}/BouncyCastle</rulesDirectory>
 							<includeDependencies>true</includeDependencies>
 						</configuration>
 					</execution>
@@ -80,18 +99,9 @@
 				<configuration>
 					<filesets>
 						<fileset>
-							<directory>${basedir}/JavaCryptographicArchitecture</directory>
+							<directory>${basedir}/BouncyCastle</directory>
 						</fileset>
 					</filesets>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
 				</configuration>
 			</plugin>
 		</plugins>
