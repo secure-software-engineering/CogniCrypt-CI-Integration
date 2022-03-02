@@ -1,17 +1,9 @@
 package de.fraunhofer.iem.maven;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import crypto.cryslhandler.CrySLModelReaderClassPath;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -22,10 +14,17 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.artifact.filter.collection.ArtifactsFilter;
 import org.apache.maven.shared.transfer.repository.RepositoryManager;
 import org.codehaus.plexus.util.StringUtils;
-
 import soot.PackManager;
 import soot.Transform;
 import soot.Transformer;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class SootMojo extends AbstractDependencyFilterMojo {
 
@@ -53,9 +52,6 @@ public abstract class SootMojo extends AbstractDependencyFilterMojo {
 
 	@Component
 	private RepositoryManager repositoryManager;
-
-	@Component
-	private ArtifactResolver artifactResolver;
 
 	public File getProjectTargetDir() {
 		if (!targetDir.isPresent()){
@@ -89,6 +85,8 @@ public abstract class SootMojo extends AbstractDependencyFilterMojo {
 
 					file = StringUtils.replace(file, localBasedir.getAbsolutePath(), localRepoProperty);
 				}
+
+				CrySLModelReaderClassPath.addToClassPath(new File(file).toURI());
 				classFolders.add(file);
 			}
 		}
