@@ -19,10 +19,7 @@ import soot.Transform;
 import soot.Transformer;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -121,9 +118,7 @@ public abstract class SootMojo extends AbstractDependencyFilterMojo {
 	}
 
 
-	private List<String> getExcludeList() {
-		return  Lists.newArrayList(excludedPackages.split(","));
-	}
+	protected abstract List<String> getExcludeList();
 
 	private List<String> buildApplicationClassPath() {
 		final File classFolder = new File(getProjectTargetDir().getAbsolutePath(), "classes");

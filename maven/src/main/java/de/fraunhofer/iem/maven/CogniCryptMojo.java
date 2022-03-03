@@ -1,6 +1,7 @@
 package de.fraunhofer.iem.maven;
 
 import java.io.File;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -113,6 +114,21 @@ public class CogniCryptMojo extends SootMojo {
 		};
 	}
 
+	@Override
+	protected List<String> getExcludeList() {
+		List<String> exList = new LinkedList<String>();
+		List<CrySLRule> rules = null;
+		try {
+			rules = getRules();
+		} catch (CryptoAnalysisException e) {
+			e.printStackTrace();
+		}
+		for(CrySLRule r : rules) {
+			exList.add(r.getClassName());
+		}
+		return exList;
+	}
+
 	private void validateParameters() throws MojoExecutionException {
 		if(!new File(rulesDirectory).exists() || !new File(rulesDirectory).isDirectory()) {
 			throw new MojoExecutionException("Failed to locate the folder of the CrySL rules. " +
@@ -130,6 +146,8 @@ public class CogniCryptMojo extends SootMojo {
 	private List<CrySLRule> getRules() throws CryptoAnalysisException {
 		return CrySLRuleReader.readFromDirectory(new File(rulesDirectory));
 	}
+
+
 
 
 	private File getReportFolder() {
