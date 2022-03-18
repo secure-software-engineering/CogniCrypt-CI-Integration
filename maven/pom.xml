@@ -20,7 +20,7 @@
     </modules>
 
     <properties>
-        <semantic.managed.version>1.5.0-SNAPSHOT</semantic.managed.version>
+        <semantic.managed.version>2.0.0-SNAPSHOT</semantic.managed.version>
         <revision>${semantic.managed.version}</revision>
     </properties>
 

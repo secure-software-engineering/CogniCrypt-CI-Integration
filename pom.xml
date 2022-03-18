@@ -23,7 +23,7 @@
 
   <modules>
     <module>maven</module>
-<!--    <module>jenkins-ng-warnings</module>-->
+    <module>jenkins-ng-warnings</module>
   </modules>
 
   <properties>

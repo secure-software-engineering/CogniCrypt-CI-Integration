@@ -44,7 +44,7 @@ we recommend setting the `MAVEN_OPTS` environment variable with:
       <plugin>
         <groupId>de.fraunhofer.iem</groupId>
         <artifactId>cognicrypt-maven-plugin</artifactId>
-        <version>1.5.0-SNAPSHOT</version>
+        <version>2.0.0-SNAPSHOT</version>
         <executions>
             <execution>
               <id>run-cognicrypt</id>
