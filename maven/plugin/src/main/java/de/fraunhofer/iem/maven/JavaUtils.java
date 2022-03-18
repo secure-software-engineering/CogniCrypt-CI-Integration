@@ -7,10 +7,10 @@ import java.util.Optional;
 
 class JavaUtils {
 
-	static Optional<Integer> javaVersion = Optional.empty();
+	private static Optional<Integer> javaVersion = Optional.empty();
 
 	public static int getJavaVersion() {
-		if (!javaVersion.isPresent()){
+		if (javaVersion.isEmpty()){
 			String versionString = System.getProperty("java.version");
 			if(versionString.startsWith("1.")) {
 				versionString = versionString.substring(2, 3);
@@ -21,13 +21,13 @@ class JavaUtils {
 				}
 			}
 			int version = Integer.parseInt(versionString);
-			javaVersion = Optional.ofNullable(version);
+			javaVersion = Optional.of(version);
 		}
 		return javaVersion.get();
 	}
 
-	public static boolean isModularProject(File classPath) {
-		Path moduleClassPath = Paths.get(classPath.getAbsolutePath(), "module-info.class");
+	public static boolean isModularProject(Path classPath) {
+		Path moduleClassPath = classPath.resolve("module-info.class");
 		return moduleClassPath.toFile().exists();
 	}
 

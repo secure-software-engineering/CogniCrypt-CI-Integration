@@ -1,7 +1,6 @@
 package de.fraunhofer.iem.maven;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
