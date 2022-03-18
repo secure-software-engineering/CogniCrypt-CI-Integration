@@ -25,7 +25,7 @@ we recommend setting the `MAVEN_OPTS` environment variable with:
 
 **Running the plugin:**
 
-`mvn de.fraunhofer.iem:cognicrypt-maven:cognicrypt -Dcognicrypt.rulesDirectory=<path-to-cryptslbins> -Dcognicrypt.outputFormat=sarif`
+`mvn de.fraunhofer.iem:cognicrypt-maven-plugin:cognicrypt -Dcognicrypt.rulesDirectory=<path-to-cryptslbins> -Dcognicrypt.outputFormat=sarif`
  
  The analysis writes its results either in SARIF-format or Standard CogniCryput output to a file in target/cognicrypt-reports
  
@@ -43,8 +43,8 @@ we recommend setting the `MAVEN_OPTS` environment variable with:
     <plugins>
       <plugin>
         <groupId>de.fraunhofer.iem</groupId>
-        <artifactId>cognicrypt-maven</artifactId>
-        <version>1.5-SNAPSHOT</version>
+        <artifactId>cognicrypt-maven-plugin</artifactId>
+        <version>1.5.0-SNAPSHOT</version>
         <executions>
             <execution>
               <id>run-cognicrypt</id>
@@ -62,8 +62,8 @@ we recommend setting the `MAVEN_OPTS` environment variable with:
 ```
 
  
- *See the `..\testApplication\simpleTestProgram\pom.xml` for an example. 
- It also includes how to do automatic CrySL ruleset donwload.*
+ *See the `..\testApplication\jcaTest\pom.xml` for an example. 
+ It also includes how to do automatically download the CrySL ruleset.*
  
  ## CogniCrypt Maven Plugin Options
  
