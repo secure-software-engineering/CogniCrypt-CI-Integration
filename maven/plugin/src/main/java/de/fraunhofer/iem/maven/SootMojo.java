@@ -56,8 +56,6 @@ public abstract class SootMojo extends AbstractDependencyFilterMojo {
 		return null;
 	}
 
-	protected abstract void analyse();
-
 	protected Collection<Path> resolveDependencies() throws MojoExecutionException {
 		if (!includeDependencies)
 			return Collections.emptyList();
@@ -90,7 +88,11 @@ public abstract class SootMojo extends AbstractDependencyFilterMojo {
 
 
 	private List<String> getExcludeList(Collection<CrySLRule> rules) {
-		return  Lists.newArrayList(excludedPackages.split(","));
+		var excludeList = Lists.newArrayList(excludedPackages.split(","));
+		for(var rule : rules) {
+			excludeList.add(rule.getClassName());
+		}
+		return excludeList;
 	}
 
 	private String buildSootClassPath(Path applicationPath, Collection<Path> dependencies) {

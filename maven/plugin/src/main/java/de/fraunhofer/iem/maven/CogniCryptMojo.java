@@ -2,11 +2,13 @@ package de.fraunhofer.iem.maven;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import crypto.cryslhandler.CrySLModelReaderClassPath;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -63,24 +65,40 @@ public class CogniCryptMojo extends SootMojo {
 		getLog().debug("Resolved " + dependencies.size() + " dependencies");
 
 		getLog().debug("Initializing Soot...");
-		// TODO: get rules
-		var setupData = createSootSetupData(classFolder, dependencies, Collections.emptyList());
+		registerDependencies(dependencies);
+		List<CrySLRule> rules;
+		try {
+			getLog().info("Fetching CogniCrypt Rules.");
+			rules = getRules();
+		} catch (CryptoAnalysisException e) {
+			getLog().error("Failed fetching rules: " + e.getMessage(), e);
+			return;
+		}
+		getLog().debug("Initialized CogniCrypt.");
+
+		getLog().debug("Initializing Soot...");
+		var setupData = createSootSetupData(classFolder, dependencies, rules);
 		new SootSetup(setupData).run();
-		getLog().debug("Initializing Soot done!");
+		getLog().debug("Initialized Soot.");
 
 		getLog().info("Running CogniCrypt...");
-		analyse();
+		analyse(rules);
 		getLog().info("CogniCrypt analysis done!");
 
 	}
 
-	@Override
-	protected void analyse() {
-		PackManager.v().getPack("wjap").add(new Transform("wjap.ifds", createAnalysisTransformer()));
+	private void analyse(List<CrySLRule> rules) {
+		PackManager.v().getPack("wjap").add(new Transform("wjap.ifds", createAnalysisTransformer(rules)));
 		PackManager.v().runPacks();
 	}
 
-	private Transformer createAnalysisTransformer() {
+	private void registerDependencies(Collection<Path> dependencies){
+		for (var dep: dependencies) {
+			CrySLModelReaderClassPath.addToClassPath(dep.toUri());
+		}
+	}
+
+	private Transformer createAnalysisTransformer(List<CrySLRule> rules) {
 		return new SceneTransformer() {
 
 			@Override
@@ -89,15 +107,6 @@ public class CogniCryptMojo extends SootMojo {
 				BoomerangPretransformer.v().apply();
 				final CrySLResultsReporter reporter = new CrySLResultsReporter();
 				ErrorMarkerListener fileReporter;
-
-				System.out.println("Fetching CogniCrypt Rules.");
-				List<CrySLRule> rules;
-				try {
-					rules = getRules();
-				} catch (Exception e) {
-					System.out.println("Failed fetching rules: " + e.getMessage());
-					return;
-				}
 
 				if(outputFormat.equalsIgnoreCase("standard")) {
 					fileReporter = new CommandLineReporter(getReportFolder().toAbsolutePath().toString(), rules);
