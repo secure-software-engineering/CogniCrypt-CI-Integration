@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import crypto.cryslhandler.CrySLModelReader;
 import crypto.cryslhandler.CrySLModelReaderClassPath;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -46,6 +47,8 @@ public class CogniCryptMojo extends SootMojo {
 	
 	@Parameter(property = "cognicrypt.dynamic-cg", defaultValue = "true")
 	private boolean dynamicCg;
+
+	private CrySLRuleReader reader;
 
 
 	@Override
@@ -93,9 +96,13 @@ public class CogniCryptMojo extends SootMojo {
 	}
 
 	private void registerDependencies(Collection<Path> dependencies){
-		for (var dep: dependencies) {
-			CrySLModelReaderClassPath.addToClassPath(dep.toUri());
+		CrySLModelReaderClassPath classPath;
+		if (dependencies.size() == 0) {
+			classPath = CrySLModelReaderClassPath.JAVA_CLASS_PATH;
+		} else {
+			classPath = CrySLModelReaderClassPath.createFromPaths(dependencies);
 		}
+		reader = new CrySLRuleReader(new CrySLModelReader(classPath));
 	}
 
 	private Transformer createAnalysisTransformer(List<CrySLRule> rules) {
@@ -161,7 +168,7 @@ public class CogniCryptMojo extends SootMojo {
 	 * Receives the set of rules form a given directory.
 	 */
 	private List<CrySLRule> getRules() throws CryptoAnalysisException {
-		return CrySLRuleReader.readFromDirectory(new File(rulesDirectory));
+		return reader.readFromDirectory(new File(rulesDirectory));
 	}
 
 	private Path getReportFolder() {
