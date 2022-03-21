@@ -1,17 +1,9 @@
 package de.fraunhofer.iem.maven;
 
-import java.io.File;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import crypto.rules.CrySLRule;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -22,16 +14,16 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.artifact.filter.collection.ArtifactsFilter;
 import org.apache.maven.shared.transfer.repository.RepositoryManager;
 import org.codehaus.plexus.util.StringUtils;
-
 import soot.PackManager;
 import soot.Transform;
 import soot.Transformer;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
+
 public abstract class SootMojo extends AbstractDependencyFilterMojo {
-
-	private List<String> classFolders = Lists.newLinkedList();
-
-	private Optional<File> targetDir = Optional.empty();
 
 	@Parameter(defaultValue = "${session}", readonly = true)
 	private MavenSession session;
@@ -54,17 +46,6 @@ public abstract class SootMojo extends AbstractDependencyFilterMojo {
 	@Component
 	private RepositoryManager repositoryManager;
 
-	@Component
-	private ArtifactResolver artifactResolver;
-
-	public File getProjectTargetDir() {
-		if (!targetDir.isPresent()){
-			File td = new File(project.getBuild().getDirectory());
-			targetDir = Optional.of(td);
-		}
-		return targetDir.get();
-	}
-
 	@Override
 	public MavenProject getProject() {
 		return this.project;
@@ -75,67 +56,51 @@ public abstract class SootMojo extends AbstractDependencyFilterMojo {
 		return null;
 	}
 
-	@Override
-	protected void doExecute() throws MojoExecutionException, MojoFailureException {
-		if (includeDependencies) {
-			Set<Artifact> artifacts = getResolvedDependencies(false);
-			for (Artifact a : artifacts) {
-				String file = a.getFile().getPath();
-				// substitute the property for the local repo path to make the classpath file
-				// portable.
-				if (StringUtils.isNotEmpty(localRepoProperty)) {
-					File localBasedir = repositoryManager
-							.getLocalRepositoryBasedir(session.getProjectBuildingRequest());
-
-					file = StringUtils.replace(file, localBasedir.getAbsolutePath(), localRepoProperty);
-				}
-				classFolders.add(file);
+	protected Collection<Path> resolveDependencies() throws MojoExecutionException {
+		if (!includeDependencies)
+			return Collections.emptyList();
+		var dependencies = new ArrayList<Path>();
+		Set<Artifact> artifacts = getResolvedDependencies(false);
+		for (Artifact artifact : artifacts) {
+			var filePath = artifact.getFile().getPath();
+			if (StringUtils.isNotEmpty(localRepoProperty)) {
+				// substitute the property for the local repo path to make the classpath file portable.
+				File localBasedir = repositoryManager.getLocalRepositoryBasedir(session.getProjectBuildingRequest());
+				filePath = StringUtils.replace(filePath, localBasedir.getAbsolutePath(), localRepoProperty);
 			}
+			var dependency = Path.of(filePath);
+			dependencies.add(dependency);
 		}
-		run(getProjectTargetDir());
+		return dependencies;
 	}
 
-	public void run(File targetDir) {
-		final File classFolder = new File(targetDir.getAbsolutePath() + File.separator + "classes");
-		if(!classFolder.exists()) {
-			getLog().info("No class folder found at " + classFolder + "");
-			return;
-		}
-
-		new SootSetup(CreateSootSetupData()).run();
-		analyse();
-		getLog().info("Soot analysis done!");
+	protected Path getProjectTargetDir() {
+		return Path.of(project.getBuild().getDirectory());
 	}
 
-	protected abstract Transformer createAnalysisTransformer();
-
-	private SootSetupData CreateSootSetupData() {
-		List<String> excludeList = getExcludeList();
-		List<String> appCp = buildApplicationClassPath();
-		String sootCp = buildSootClassPath(classFolders, appCp);
-		boolean modular = JavaUtils.isModularProject(new File(getProjectTargetDir(), "classes"));
+	protected SootSetupData createSootSetupData(Path applicationPath, Collection<Path> dependencies, Collection<CrySLRule> rules) {
+		List<String> excludeList = getExcludeList(rules);
+		List<String> appCp = Lists.newArrayList(applicationPath.toAbsolutePath().toString());
+		String sootCp = buildSootClassPath(applicationPath, dependencies);
+		boolean modular = JavaUtils.isModularProject(applicationPath);
 		return new SootSetupData(callGraph, sootCp, appCp, modular, excludeList);
 	}
 
-	private void analyse() {
-		PackManager.v().getPack("wjap").add(new Transform("wjap.ifds", createAnalysisTransformer()));
-		PackManager.v().runPacks();
+
+	private List<String> getExcludeList(Collection<CrySLRule> rules) {
+		var excludeList = Lists.newArrayList(excludedPackages.split(","));
+		for(var rule : rules) {
+			excludeList.add(rule.getClassName());
+		}
+		return excludeList;
 	}
 
-
-	private List<String> getExcludeList() {
-		return  Lists.newArrayList(excludedPackages.split(","));
-	}
-
-	private List<String> buildApplicationClassPath() {
-		final File classFolder = new File(getProjectTargetDir().getAbsolutePath(), "classes");
-		return Lists.newArrayList(classFolder.getAbsolutePath());
-	}
-
-	private String buildSootClassPath(List<String> dependencies, List<String> applicationCp) {
-		List<String> sootCp = Stream.of(dependencies, applicationCp)
-				.flatMap(Collection::stream)
-				.collect(Collectors.toList());
+	private String buildSootClassPath(Path applicationPath, Collection<Path> dependencies) {
+		var sootCp = new ArrayList<String>();
+		for (var dep: dependencies) {
+			sootCp.add(dep.toAbsolutePath().toString());
+		}
+		sootCp.add(applicationPath.toAbsolutePath().toString());
 		String javaPath = JavaUtils.getJavaRuntimePath().getAbsolutePath();
 		sootCp.add(0, javaPath);
 		List<String> distinctSootCp = sootCp.stream().distinct().collect(Collectors.toList());

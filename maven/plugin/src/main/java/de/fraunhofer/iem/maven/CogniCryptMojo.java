@@ -1,12 +1,16 @@
 package de.fraunhofer.iem.maven;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import crypto.cryslhandler.CrySLModelReader;
+import crypto.cryslhandler.CrySLModelReaderClassPath;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -27,10 +31,7 @@ import crypto.reporting.SARIFReporter;
 import crypto.reporting.SourceCodeLocater;
 import crypto.rules.CrySLRule;
 import crypto.rules.CrySLRuleReader;
-import soot.SceneTransformer;
-import soot.SootMethod;
-import soot.Transformer;
-import soot.Unit;
+import soot.*;
 
 @Mojo(name = "cognicrypt", requiresDependencyResolution = ResolutionScope.COMPILE, defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
 public class CogniCryptMojo extends SootMojo {
@@ -47,15 +48,64 @@ public class CogniCryptMojo extends SootMojo {
 	@Parameter(property = "cognicrypt.dynamic-cg", defaultValue = "true")
 	private boolean dynamicCg;
 
+	private CrySLRuleReader reader;
+
 
 	@Override
-	protected void doExecute() throws MojoExecutionException, MojoFailureException {
+	protected void doExecute() throws MojoExecutionException {
 		validateParameters();
-		super.doExecute();
+
+		var targetDir = getProjectTargetDir();
+		var classFolder = targetDir.resolve("classes");
+		if(!classFolder.toFile().exists()) {
+			getLog().debug("No class folder for project found at " + classFolder + "");
+			getLog().info("CogniCrypt found nothing to analyze!");
+			return;
+		}
+
+		getLog().debug("Resolving project dependencies...");
+		var dependencies = resolveDependencies();
+		getLog().debug("Resolved " + dependencies.size() + " dependencies");
+
+		getLog().debug("Initializing Soot...");
+		registerDependencies(dependencies);
+		List<CrySLRule> rules;
+		try {
+			getLog().info("Fetching CogniCrypt Rules.");
+			rules = getRules();
+		} catch (CryptoAnalysisException e) {
+			getLog().error("Failed fetching rules: " + e.getMessage(), e);
+			return;
+		}
+		getLog().debug("Initialized CogniCrypt.");
+
+		getLog().debug("Initializing Soot...");
+		var setupData = createSootSetupData(classFolder, dependencies, rules);
+		new SootSetup(setupData).run();
+		getLog().debug("Initialized Soot.");
+
+		getLog().info("Running CogniCrypt...");
+		analyse(rules);
+		getLog().info("CogniCrypt analysis done!");
+
 	}
 
-	@Override
-	protected Transformer createAnalysisTransformer() {
+	private void analyse(List<CrySLRule> rules) {
+		PackManager.v().getPack("wjap").add(new Transform("wjap.ifds", createAnalysisTransformer(rules)));
+		PackManager.v().runPacks();
+	}
+
+	private void registerDependencies(Collection<Path> dependencies){
+		CrySLModelReaderClassPath classPath;
+		if (dependencies.size() == 0) {
+			classPath = CrySLModelReaderClassPath.JAVA_CLASS_PATH;
+		} else {
+			classPath = CrySLModelReaderClassPath.createFromPaths(dependencies);
+		}
+		reader = new CrySLRuleReader(new CrySLModelReader(classPath));
+	}
+
+	private Transformer createAnalysisTransformer(List<CrySLRule> rules) {
 		return new SceneTransformer() {
 
 			@Override
@@ -65,29 +115,20 @@ public class CogniCryptMojo extends SootMojo {
 				final CrySLResultsReporter reporter = new CrySLResultsReporter();
 				ErrorMarkerListener fileReporter;
 
-				System.out.println("Fetching CogniCrypt Rules.");
-				List<CrySLRule> rules;
-				try {
-					rules = getRules();
-				} catch (Exception e) {
-					System.out.println("Failed fetching rules: " + e.getMessage());
-					return;
-				}
-
 				if(outputFormat.equalsIgnoreCase("standard")) {
-					fileReporter = new CommandLineReporter(getReportFolder().getAbsolutePath(), rules);
+					fileReporter = new CommandLineReporter(getReportFolder().toAbsolutePath().toString(), rules);
 				} else if(outputFormat.equalsIgnoreCase("sarif")) {
 					MavenProject project = getProject();
-					fileReporter = new SARIFReporter(getReportFolder().getAbsolutePath(), rules,
+					fileReporter = new SARIFReporter(getReportFolder().toAbsolutePath().toString(), rules,
 							new SourceCodeLocater(project.hasParent() ?
 									project.getParent().getBasedir() :
 									project.getBasedir()));
 				} else {
-					throw new RuntimeException("Illegal state");
+					throw new IllegalStateException("Illegal output format specified");
 				}
 				reporter.addReportListener(fileReporter);
 
-				System.out.println("Creating ICFG!");
+				getLog().debug("Creating ICFG!");
 				final ObservableICFG<Unit, SootMethod> icfg;
 				if(!dynamicCg) {
 					 icfg = new ObservableStaticICFG(new BoomerangICFG(true));
@@ -106,8 +147,7 @@ public class CogniCryptMojo extends SootMojo {
 						return reporter;
 					}
 				};
-
-				System.out.println("Starting CogniCrypt Analysis!");
+				getLog().debug("Starting CogniCrypt Analysis!");
 				scanner.scan(rules);
 			}
 		};
@@ -128,17 +168,17 @@ public class CogniCryptMojo extends SootMojo {
 	 * Receives the set of rules form a given directory.
 	 */
 	private List<CrySLRule> getRules() throws CryptoAnalysisException {
-		return CrySLRuleReader.readFromDirectory(new File(rulesDirectory));
+		return reader.readFromDirectory(new File(rulesDirectory));
 	}
 
-
-	private File getReportFolder() {
-		File reportsFolder = new File(reportsFolderParameter);
+	private Path getReportFolder() {
+		var reportsFolder = Path.of(reportsFolderParameter);
 		if (!reportsFolder.isAbsolute()) {
-			reportsFolder = new File(getProjectTargetDir(), reportsFolderParameter);
+			reportsFolder = getProjectTargetDir().resolve(reportsFolderParameter);
 		}
-		if (!reportsFolder.exists()) {
-			reportsFolder.mkdirs();
+		var asFile = reportsFolder.toFile();
+		if (!asFile.exists()) {
+			asFile.mkdirs();
 		}
 		return reportsFolder;
 	}
